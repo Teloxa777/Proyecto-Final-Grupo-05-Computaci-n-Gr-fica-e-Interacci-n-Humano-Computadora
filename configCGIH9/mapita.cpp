@@ -104,6 +104,8 @@ void ProcessKonamiCode(int key);
 void ActivateMaxPower();
 void DestroyEnemiesWithGrenade();
 
+void DrawItemHUD(Shader& shader, GLuint VAO, GLint modelLoc);
+
 // --- Dibujado ---
 void DrawCube(Shader& shader, GLuint VAO, GLint modelLoc,
     const glm::vec3& position, const glm::vec3& scale, const glm::vec3& color);
@@ -132,6 +134,7 @@ void DrawTankCityMap(
     Model& score100Model, Model& score200Model, Model& score300Model,
     Model& cascoModel, Model& relojModel, Model& palaModel,
     Model& estrellaModel, Model& granadaModel, Model& vidaModel);
+
 
 // --- Pase de profundidad para sombras ---
 void DrawSceneDepthPass(
@@ -166,6 +169,17 @@ GLuint CreateUITextureProgram();
 void   InitUIQuad();
 GLuint LoadTextureFromPNG(const char* path);
 void   DrawUIImage(GLuint texture, float x, float y, float w, float h);
+
+// ============================================================
+// contador de ítems
+// ============================================================
+int itemsCollectedTotal = 0;
+int cascoCollected = 0;
+int relojCollected = 0;
+int palaCollected = 0;
+int estrellaCollected = 0;
+int granadaCollected = 0;
+int vidaCollected = 0;
 
 // ============================================================
 // Constantes de pantalla
@@ -908,6 +922,7 @@ int main()
             cascoModel, relojModel, palaModel,
             estrellaModel, granadaModel, vidaModel);
 
+        DrawItemHUD(cubeShader, VAO, cubeModelLoc);
         glfwSwapBuffers(window);
     }
 
@@ -1428,33 +1443,40 @@ void CheckItemPickup()
         if (dist <= ITEM_PICKUP_DIST)
         {
             it.active = false;
+            itemsCollectedTotal++;
             switch (it.type)
             {
             case ITEM_CASCO:
+                cascoCollected++;
                 cascoActive = true;
                 cascoTimer = CASCO_DURATION;
                 std::cout << "[ITEM] Casco recogido! Proteccion 30s\n";
                 break;
             case ITEM_RELOJ:
+                relojCollected++;
                 relojActive = true;
                 relojTimer = RELOJ_DURATION;
                 std::cout << "[ITEM] Reloj recogido! Tanques detenidos 30s\n";
                 break;
             case ITEM_PALA:
+                palaCollected++;
                 ApplyPalaEffect();
                 palaActive = true;
                 palaTimer = pala_DURATION;
                 std::cout << "[ITEM] Pala recogida! Bloques alrededor del aguila convertidos a metal por 30s.\n";
                 break;
             case ITEM_ESTRELLA:
+                estrellaCollected++;
                 ActivateMaxPower();
                 std::cout << "[ITEM] Poder maximo por 30s\n";
                 break;
             case ITEM_GRANADA:
+                granadaCollected++;
                 DestroyEnemiesWithGrenade();
                 std::cout << "[ITEM] Granada: enemigos destruidos.\n";
                 break;
             case ITEM_VIDA:
+                vidaCollected++;
                 playerLives++;
                 std::cout << "[ITEM] Vida extra. Vidas: " << playerLives << "\n";
                 break;
@@ -2774,6 +2796,14 @@ void ResetGame()
 
     mapa = mapaOriginal; // Restaurar el mapa original
 
+    itemsCollectedTotal = 0;
+    cascoCollected = 0;
+    relojCollected = 0;
+    palaCollected = 0;
+    estrellaCollected = 0;
+    granadaCollected = 0;
+    vidaCollected = 0;
+
     playerState = PLAYER_OFF;
     playerLives = PLAYER_MAX_LIVES;
     playerAnimTimer = 0.0f;
@@ -3209,6 +3239,67 @@ void ToggleCameraMode()
         firstMouse = true; // Resetear para evitar salto de camara al volver
         std::cout << "Camara: LIBRE\n";
     }
+}
+
+void DrawItemHUD(Shader& shader, GLuint VAO, GLint modelLoc)
+{
+    glDisable(GL_DEPTH_TEST);
+
+    // Contador general de items
+    DrawRetroText(shader, VAO, modelLoc,
+        "ITEMS: " + std::to_string(itemsCollectedTotal),
+        25.0f, 25.0f, 4.0f,
+        glm::vec3(0.95f, 0.95f, 0.95f));
+
+    // Vidas del jugador
+    DrawRetroText(shader, VAO, modelLoc,
+        "VIDAS: " + std::to_string(playerLives),
+        25.0f, 55.0f, 4.0f,
+        glm::vec3(0.95f, 0.95f, 0.95f));
+
+    float y = 85.0f;
+
+    // Cronometro del casco
+    if (cascoActive)
+    {
+        DrawRetroText(shader, VAO, modelLoc,
+            "CASCO: " + std::to_string((int)ceil(cascoTimer)) + "s",
+            25.0f, y, 4.0f,
+            glm::vec3(0.50f, 0.90f, 1.00f));
+        y += 30.0f;
+    }
+
+    // Cronometro del reloj
+    if (relojActive)
+    {
+        DrawRetroText(shader, VAO, modelLoc,
+            "RELOJ: " + std::to_string((int)ceil(relojTimer)) + "s",
+            25.0f, y, 4.0f,
+            glm::vec3(0.95f, 0.95f, 0.35f));
+        y += 30.0f;
+    }
+
+    // Cronometro de la pala
+    if (palaActive)
+    {
+        DrawRetroText(shader, VAO, modelLoc,
+            "PALA: " + std::to_string((int)ceil(palaTimer)) + "s",
+            25.0f, y, 4.0f,
+            glm::vec3(0.70f, 0.70f, 0.70f));
+        y += 30.0f;
+    }
+
+    // Cronometro de la estrella
+    if (maxPower)
+    {
+        DrawRetroText(shader, VAO, modelLoc,
+            "ESTRELLA: " + std::to_string((int)ceil(maxPowerTimer)) + "s",
+            25.0f, y, 4.0f,
+            glm::vec3(1.00f, 0.85f, 0.20f));
+        y += 30.0f;
+    }
+
+    glEnable(GL_DEPTH_TEST);
 }
 
 // Calcula la posicion de la camara en modo tercera persona (detras del tanque)
