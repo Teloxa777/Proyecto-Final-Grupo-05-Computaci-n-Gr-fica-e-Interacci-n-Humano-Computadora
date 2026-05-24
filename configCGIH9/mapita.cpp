@@ -412,7 +412,7 @@ float grayKFPosY = PLAYER_Y;
 float grayKFPosZ = 0.0f;
 float grayKFRotY = 180.0f;
 
-#define MAX_GRAY_FRAMES 3
+#define MAX_GRAY_FRAMES 5
 int gray_i_max_steps = 40;
 int gray_i_curr_steps = 0;
 
@@ -2647,21 +2647,23 @@ void InitGrayTankKeyFrames()
 {
     grayFrameIndex = 0;
 
-    // Recorrido sencillo y seguro:
-    // sale desde una zona central libre, avanza por el pasillo superior,
-    // gira hacia el pasillo derecho y se detiene antes del borde metalico.
-    // Asi no atraviesa ladrillos, metal, agua ni la base.
-    glm::vec3 p0 = TileToWorld(16, 11); // zona central libre
-    glm::vec3 p1 = TileToWorld(27, 11); // pasillo derecho superior
-    glm::vec3 p2 = TileToWorld(27, 23); // pasillo derecho, antes del borde inferior
+    glm::vec3 p0 = TileToWorld(16, 11);
+    glm::vec3 p1 = TileToWorld(22, 11);
+    glm::vec3 p2 = TileToWorld(27, 11);
+    glm::vec3 p3 = TileToWorld(27, 18);
+    glm::vec3 p4 = TileToWorld(27, 23);
 
     p0.y = PLAYER_Y;
     p1.y = PLAYER_Y;
     p2.y = PLAYER_Y;
+    p3.y = PLAYER_Y;
+    p4.y = PLAYER_Y;
 
-    SaveGrayTankFrame(p0.x, p0.y, p0.z, 180.0f); // avanza a la derecha
-    SaveGrayTankFrame(p1.x, p1.y, p1.z, 90.0f);  // gira hacia abajo
-    SaveGrayTankFrame(p2.x, p2.y, p2.z, 90.0f);  // queda apuntando hacia abajo para disparar
+    SaveGrayTankFrame(p0.x, p0.y, p0.z, 180.0f);
+    SaveGrayTankFrame(p1.x, p1.y, p1.z, 180.0f);
+    SaveGrayTankFrame(p2.x, p2.y, p2.z, 90.0f);
+    SaveGrayTankFrame(p3.x, p3.y, p3.z, 90.0f);
+    SaveGrayTankFrame(p4.x, p4.y, p4.z, 90.0f);
 }
 
 void PlayGrayTankKeyFrameAnimation()
