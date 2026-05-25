@@ -15,6 +15,10 @@ uniform vec3  lightColor;
 uniform vec3  viewPos;
 uniform float ambientFactor;
 
+// Efecto de agua
+uniform int isWater;
+uniform float waterTime;
+
 // Transparencia de hojas: 0=opaco 1=transparente
 // Solo se aplica si isLeaf==1
 uniform float leafAlpha;
@@ -35,15 +39,36 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 norm, vec3 lightDir)
     for (int x = -1; x <= 1; x++)
         for (int y = -1; y <= 1; y++)
         {
-            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x,y) * texelSize).r;
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
             shadow += (currentDepth - bias > pcfDepth) ? 1.0 : 0.0;
         }
+
     return shadow / 9.0;
 }
 
 void main()
 {
-    vec4 texColor = texture(texture_diffuse1, TexCoords);
+    vec2 uv = TexCoords;
+
+    // Movimiento de la textura del agua
+    if (isWater == 1)
+    {
+        float wave1 = sin((uv.y * 25.0) + waterTime * 5.0);
+        float wave2 = cos((uv.x * 20.0) + waterTime * 4.0);
+
+        uv.x += wave1 * 0.08;
+        uv.y += wave2 * 0.06;
+    }
+
+    vec4 texColor = texture(texture_diffuse1, uv);
+
+    // Brillo y tono extra para que el agua se note más
+    if (isWater == 1)
+    {
+        float shine = 0.10 * sin(waterTime * 6.0 + uv.x * 12.0);
+        texColor.rgb += vec3(0.0, 0.12, 0.22) + shine;
+    }
+
     if (texColor.a < 0.1) discard;
 
     vec3 norm     = normalize(Normal);
@@ -66,8 +91,6 @@ void main()
     float finalAlpha = texColor.a;
     if (isLeaf == 1)
     {
-        // leafAlpha: 0=opaco, 1=muy transparente
-        // Se mezcla para que nunca desaparezca del todo (minimo 0.25)
         finalAlpha = mix(texColor.a, 0.25, leafAlpha);
     }
 
