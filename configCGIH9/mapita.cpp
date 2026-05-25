@@ -105,7 +105,7 @@ void ActivateMaxPower();
 void DestroyEnemiesWithGrenade();
 
 void DrawItemHUD(Shader& shader, GLuint VAO, GLint modelLoc);
-
+void DrawEnemyIndicators(Shader& shader, GLuint VAO, GLint modelLoc);
 // --- Dibujado ---
 void DrawCube(Shader& shader, GLuint VAO, GLint modelLoc,
     const glm::vec3& position, const glm::vec3& scale, const glm::vec3& color);
@@ -921,8 +921,10 @@ int main()
             score100Model, score200Model, score300Model,
             cascoModel, relojModel, palaModel,
             estrellaModel, granadaModel, vidaModel);
+DrawEnemyIndicators(cubeShader, VAO, cubeModelLoc);
 
         DrawItemHUD(cubeShader, VAO, cubeModelLoc);
+        
         glfwSwapBuffers(window);
     }
 
@@ -3304,6 +3306,41 @@ void DrawItemHUD(Shader& shader, GLuint VAO, GLint modelLoc)
     glEnable(GL_DEPTH_TEST);
 }
 
+//Animacion Visualizar enemigos
+
+void DrawEnemyIndicators(Shader& shader, GLuint VAO, GLint modelLoc)
+{
+    shader.Use();
+
+    float pulse = 0.5f + 0.5f * sinf((float)glfwGetTime() * 6.0f);
+
+    for (int i = 0; i < (int)enemies.size(); i++)
+    {
+        if (enemies[i].state != ENEMY_ALIVE && enemies[i].state != ENEMY_SPAWNING)
+            continue;
+
+        glm::vec3 pos = enemies[i].pos;
+        pos.y += 3.0f + 0.25f * sinf((float)glfwGetTime() * 4.0f + i);
+
+        glm::vec3 color;
+
+        if (enemies[i].type == ENEMY_GRAY)
+            color = glm::vec3(0.90f, 0.90f, 0.90f);
+        else if (enemies[i].type == ENEMY_RED)
+            color = glm::vec3(1.00f, 0.20f + pulse * 0.40f, 0.20f);
+        else
+            color = glm::vec3(0.20f, 1.00f, 0.20f);
+
+        DrawCube(
+            shader,
+            VAO,
+            modelLoc,
+            pos,
+            glm::vec3(0.45f, 0.45f, 0.45f),
+            color
+        );
+    }
+}
 // Calcula la posicion de la camara en modo tercera persona (detras del tanque)
 glm::vec3 GetFollowCameraPosition()
 {
